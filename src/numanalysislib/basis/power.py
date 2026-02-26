@@ -12,6 +12,13 @@ class PowerBasis(PolynomialBasis):
     def evaluate_basis(self, index: int, x: np.ndarray) -> np.ndarray:
         """
         Evaluates x^index.
+
+            Args:
+                index: the index associated to the basis you want to evaluate
+                x: The value of x at which to evaluate the polynomial basis.
+
+            Returns:
+                The value of the basis at x.
         """
         if index < 0 or index > self.degree:
             raise ValueError(f"Basis index {index} out of range for degree {self.degree}")
