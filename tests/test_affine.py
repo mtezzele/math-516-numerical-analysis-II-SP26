@@ -18,13 +18,13 @@ class TestAffinePower:
 
         # make instance
         basis = PowerBasis(10)
-        Affine = AffinePolynomialBasis(basis, a = a, b = b)
+        affine = AffinePolynomialBasis(basis, a=a, b=b)
 
         # verify pull back maps interval
         physical_int = np.linspace(a, b, 100)
         reference_int = np.linspace(0, 1, 100)
 
-        mapped_physical_int = Affine.pull_back(physical_int)
+        mapped_physical_int = affine.pull_back(physical_int)
 
         np.testing.assert_allclose(mapped_physical_int, reference_int)
 
@@ -38,17 +38,17 @@ class TestAffinePower:
 
         # make instance
         basis = PowerBasis(10)
-        Affine = AffinePolynomialBasis(basis, a = a, b = b)
+        affine = AffinePolynomialBasis(basis, a=a, b=b)
 
         # verify push forward maps interval
         physical_int = np.linspace(a, b, 100)
         reference_int = np.linspace(0, 1, 100)
 
-        mapped_reference_int = Affine.push_forward(reference_int)
+        mapped_reference_int = affine.push_forward(reference_int)
 
         np.testing.assert_allclose(mapped_reference_int, physical_int)
 
-    def test_failure(self):
+    def bound_order_test_failure(self):
         """
         Check for failure
         """
@@ -57,14 +57,14 @@ class TestAffinePower:
 
         with pytest.raises(ValueError, match = "b must be greater than a"):
             basis = PowerBasis(10)
-            Affine = AffinePolynomialBasis(basis, a = a, b = b)
+            affine = AffinePolynomialBasis(basis, a=a, b=b)
 
 class TestAffinePlotter:
 
     @pytest.fixture
     def affine(self):
         basis = PowerBasis(degree=2)
-        return AffinePolynomialBasis(basis, a = 2, b = 3)
+        return AffinePolynomialBasis(basis, a=2, b=3)
 
     @patch("matplotlib.pyplot.show")
     def affine_test_plot_basis_smoke(self, mock_show, affine):
