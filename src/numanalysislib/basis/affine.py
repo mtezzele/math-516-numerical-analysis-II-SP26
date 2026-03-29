@@ -23,10 +23,14 @@ class AffinePolynomialBasis(PolynomialBasis):
         if a > b:
             raise ValueError("b must be greater than a")
         
+        # inheret necessary attributes from the basis
         self.basis = basis
         self.a_hat = basis.a
         self.b_hat = basis.b
+        self.degree = basis.degree
+        self.n_dofs = basis.n_dofs
 
+        # create physical interval
         self.a = a
         self.b = b
 
@@ -36,7 +40,7 @@ class AffinePolynomialBasis(PolynomialBasis):
         phi_i(x)
         """
         x_hat = self.pull_back(x)
-        x_hat_eval = self.basis.evaluate_basis(x_hat)
+        x_hat_eval = self.basis.evaluate_basis(index, x_hat)
 
         return self.push_forward(x_hat_eval)
     
@@ -46,7 +50,8 @@ class AffinePolynomialBasis(PolynomialBasis):
         Returns the coefficients array.
         """
         x_nodes_hat = self.pull_back(x_nodes)
-        return self.push_forward(self.basis.fit(x_nodes_hat))
+        y_nodes_hat = self.pull_back(y_nodes)
+        return self.push_forward(self.basis.fit(x_nodes_hat, y_nodes_hat))
 
 
     def pull_back(self, x: float) -> float:
