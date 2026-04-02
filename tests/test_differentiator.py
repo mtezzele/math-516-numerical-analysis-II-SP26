@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from numanalysislib.basis.power import PowerBasis
 from numanalysislib.basis.affine import AffinePolynomialBasis
 from numanalysislib.calculus.differentiator import differentiate, evaluate_derivative
@@ -8,7 +7,7 @@ from numanalysislib.calculus.differentiator import differentiate, evaluate_deriv
 class TestDifferentiate:
 
     def test_constant(self):
-        # derivative of 2 is 0
+        """ Test if derivative of a constant is zero."""
         basis = PowerBasis(0)
         coeffs = np.array([2.0])
         new_basis, new_coeffs = differentiate(basis, coeffs)
@@ -16,7 +15,7 @@ class TestDifferentiate:
         np.testing.assert_allclose(new_coeffs, [0.0])
 
     def test_linear(self):
-        # derivative of 2x + 2 is 2
+        """Test if derivative of a linear polynomial is correct."""
         basis = PowerBasis(1)
         coeffs = np.array([2.0, 2.0])
         new_basis, new_coeffs = differentiate(basis, coeffs)
@@ -24,6 +23,7 @@ class TestDifferentiate:
         np.testing.assert_allclose(new_coeffs, [2.0])
 
     def test_cubic(self):
+        """Test if derivative of a cubic polynomial is correct."""
         # derivative of x^3 + 4x^2 + 5x + 12 is 3x^2 + 8x + 5
         basis = PowerBasis(3)
         coeffs = np.array([12.0, 5.0, 4.0, 1.0])
@@ -32,8 +32,7 @@ class TestDifferentiate:
         np.testing.assert_allclose(new_coeffs, [5.0, 8.0, 3.0])
 
     def test_affine_derivative(self):
-        # f(x) = x^2 on [0, 4], derivative is 2x
-        # fit on physical points so coefficients are correct
+        """Test if derivative of an AffinePolynomialBasis polynomial is correct."""
         inner = PowerBasis(2)
         basis = AffinePolynomialBasis(inner, a=0.0, b=4.0)
         x_nodes = np.array([0.0, 2.0, 4.0])
@@ -46,7 +45,7 @@ class TestDifferentiate:
         np.testing.assert_allclose(result, expected, atol=1e-10)
 
     def test_evaluate_derivative(self):
-        # derivative of x^3 is 3x^2
+        """Test if evaluate_derivative gives correct numerical approximation."""
         basis = PowerBasis(3)
         coeffs = np.array([0.0, 0.0, 0.0, 1.0])
         x = np.array([0.0, 1.0, 2.0, -1.0])
@@ -55,7 +54,7 @@ class TestDifferentiate:
         np.testing.assert_allclose(result, expected, atol=1e-5)
 
     def test_evaluate_affine_derivative(self):
-        # same test as analytic derivative test for affine but using evaluate_derivative instead of differentiate
+        """Test if evaluate_derivative gives correct numerical approximation for an AffinePolynomialBasis polynomial."""
         inner = PowerBasis(2)
         basis = AffinePolynomialBasis(inner, a=0.0, b=4.0)
         x_nodes = np.array([0.0, 2.0, 4.0])
@@ -65,3 +64,5 @@ class TestDifferentiate:
         expected = 2.0 * x_test
         result = evaluate_derivative(basis, coeffs, x_test)
         np.testing.assert_allclose(result, expected, atol=1e-5)
+
+    # Rishi Note: Test with non-PowerBasis (e.g. Lagrange, Chebyshev) once those modules are merged
