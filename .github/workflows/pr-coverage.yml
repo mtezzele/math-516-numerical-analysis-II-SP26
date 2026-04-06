@@ -1,9 +1,8 @@
 name: Test Coverage Check
 
 on:
-  pull_request:
-    branches:
-      - main  # Triggers when a PR against the main branch is opened
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
   test-and-coverage:
@@ -12,7 +11,7 @@ jobs:
     # Required permissions to post a comment on the PR
     permissions:
       pull-requests: write
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout Repository
