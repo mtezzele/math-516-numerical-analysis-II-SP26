@@ -9,12 +9,13 @@ Methods:
 Note: For non-PowerBasis objects, we first fit the function to a PowerBasis representation before differentiating. 
 """
 import numpy as np
+import math
 from numanalysislib.basis._abstract import PolynomialBasis
 from numanalysislib.basis.power import PowerBasis
 from numanalysislib.basis.affine import AffinePolynomialBasis
 from typing import Tuple
 
-def differentiate(basis: PolynomialBasis, coefficients: np.ndarray) -> Tuple[PolynomialBasis, np.ndarray]:
+def differentiate(basis: PolynomialBasis, coefficients: np.ndarray, k: int = 1) -> Tuple[PolynomialBasis, np.ndarray]:
     """
     Compute the derivative polynomial analytically.
 
@@ -28,36 +29,36 @@ def differentiate(basis: PolynomialBasis, coefficients: np.ndarray) -> Tuple[Pol
         The PolynomialBasis object representing the polynomial.
     coefficients: np.ndarray
         Array of shape (n_dofs,) containing the basis coefficients.
+    k: int, optional
+        The order of the derivative to compute (default: 1).
 
     Returns
     -------
-    Tuple[PolynomialBasis, np.ndarray]
+    Tuple[PowerBasis, np.ndarray]
         A new PowerBasis of degree n-1 and its coefficients representing the derivative polynomial.
     """
-    if basis.degree == 0:
-        return PowerBasis(0), np.array([0.0])
+    for _ in range(k):
+        if isinstance(basis, PowerBasis):
+            basis, coefficients = basis.differentiate_coefficients(coefficients)
+        else:
+            # For non-PowerBasis, fit to PowerBasis first, then differentiate
+            n = basis.degree
+            x_pts = np.linspace(basis.a, basis.b, n + 1)
+            y_pts = basis.evaluate(coefficients, x_pts)
+            temp_basis = PowerBasis(n)
+            temp_coeffs = temp_basis.fit(x_pts, y_pts)
 
-    if isinstance(basis, PowerBasis):
-        indices = np.arange(1, len(coefficients))
-        new_coeffs = indices * coefficients[1:]
-        return PowerBasis(basis.degree - 1), new_coeffs
+            basis, coefficients = temp_basis.differentiate_coefficients(temp_coeffs)
 
-    n = basis.degree
-    x_pts = np.linspace(basis.a, basis.b, n + 1)
-    y_pts = basis.evaluate(coefficients, x_pts)
+    return basis, coefficients
 
-    temp_basis = PowerBasis(n)
-    temp_coeffs = temp_basis.fit(x_pts, y_pts)
-
-    indices = np.arange(1, len(temp_coeffs))
-    new_coeffs = indices * temp_coeffs[1:]
-
-    return PowerBasis(n - 1), new_coeffs
-
-def evaluate_derivative(basis: PolynomialBasis, coefficients: np.ndarray, x: float, h: float = 1e-7) -> np.ndarray:
+def evaluate_derivative(basis: PolynomialBasis, coefficients: np.ndarray, x: float, k: int =1, h: float = 1e-5, scheme: str = "centered") -> np.ndarray:
     """
-    Evaluate the derivative numerically via centered differences.
-    Computes the approximation p'(x) ≈ (p(x + h) - p(x - h)) / (2h), which is second-order accurate.
+    Evaluate the k-th derivative numerically using finite differences via The Taylor Table / Undetermined Coeffiecients approach.
+    
+    Builds the Taylor table A where A[i, j] = s_i^j / j!,
+    solves A^T c = e_k for the weights c, then computes
+    f^{(k)}(x) = c^T f / h^k.
 
     Parameters
     ----------
@@ -67,16 +68,45 @@ def evaluate_derivative(basis: PolynomialBasis, coefficients: np.ndarray, x: flo
         Array of shape (n_dofs,) containing the basis coefficients.
     x: float
         The point at which to evaluate the derivative.
+    k: int, optional
+        The order of the derivative to compute (default: 1).
     h: float, optional
-        The step size for finite difference (default: 1e-7).
+        The step size for finite difference (default: 1e-5).
+    scheme: str, optional
+        The finite difference scheme to use: "forward", "backward", or "centered"
 
     Returns
     -------
     np.ndarray
-        The numerical approximation of the derivative at point x as np.ndarray.
+        The numerical approximation of the k-th derivative at point x as np.ndarray.
     """
-    x = np.asarray(x)
-    f_next = basis.evaluate(coefficients, x + h)
-    f_prev = basis.evaluate(coefficients, x - h)
-    deriv = (f_next - f_prev) / (2 * h)
-    return deriv
+    x = np.asarray(x, dtype=float)
+
+    if scheme == "centered":
+        s = np.arange(-k, k + 1)
+    elif scheme == "forward":
+        s = np.arange(0, k + 1)
+    elif scheme == "backward":
+        s = np.arange(-k, 1)
+    else:
+        raise ValueError(f"Unknown scheme: {scheme}. Use 'centered', 'forward', or 'backward'.")
+    n = len(s)
+
+    # Build Taylor table: A[i, j] = s_i^j / j!
+    A = np.zeros((n, n))
+    for j in range(n):
+        A[:, j] = s**j / math.factorial(j)
+
+    # Solve A^T c = e_k
+    e_k = np.zeros(n)
+    e_k[k] = 1.0
+    c = np.linalg.solve(A.T, e_k)
+
+    # f^{(k)}(x) = c^T f / h^k
+    result = np.zeros_like(x, dtype=float)
+    for j in range(n):
+        result += c[j] * basis.evaluate(
+            coefficients, x + s[j] * h
+        )
+
+    return result / (h ** k)

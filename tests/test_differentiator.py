@@ -65,4 +65,42 @@ class TestDifferentiate:
         result = evaluate_derivative(basis, coeffs, x_test)
         np.testing.assert_allclose(result, expected, atol=1e-5)
 
+    def test_second_derivative(self):
+        """Test if second derivative of x^4 is 12x^2."""
+        basis = PowerBasis(4)
+        coeffs = np.array([0.0, 0.0, 0.0, 0.0, 1.0])
+        new_basis, new_coeffs = differentiate(basis, coeffs, k=2)
+        assert new_basis.degree == 2
+        x = np.array([0.0, 1.0, 2.0, -1.0])
+        expected = 12.0 * x**2
+        result = new_basis.evaluate(new_coeffs, x)
+        np.testing.assert_allclose(result, expected)
+
+    def test_evaluate_second_derivative(self):
+        """Test numerical second derivative of x^4 is 12x^2."""
+        basis = PowerBasis(4)
+        coeffs = np.array([0.0, 0.0, 0.0, 0.0, 1.0])
+        x = np.array([0.0, 1.0, 2.0, -1.0])
+        expected = 12.0 * x**2
+        result = evaluate_derivative(basis, coeffs, x, k=2)
+        np.testing.assert_allclose(result, expected, atol=1e-3)
+
+    def test_forward_scheme(self):
+        """Test forward difference scheme on x^3."""
+        basis = PowerBasis(3)
+        coeffs = np.array([0.0, 0.0, 0.0, 1.0])
+        x = np.array([0.0, 1.0, 2.0])
+        expected = 3.0 * x**2
+        result = evaluate_derivative(basis, coeffs, x, scheme="forward")
+        np.testing.assert_allclose(result, expected, atol=1e-3)
+
+    def test_backward_scheme(self):
+        """Test backward difference scheme on x^3."""
+        basis = PowerBasis(3)
+        coeffs = np.array([0.0, 0.0, 0.0, 1.0])
+        x = np.array([0.0, 1.0, 2.0])
+        expected = 3.0 * x**2
+        result = evaluate_derivative(basis, coeffs, x, scheme="backward")
+        np.testing.assert_allclose(result, expected, atol=1e-3)
+
     # Rishi Note: Test with non-PowerBasis (e.g. Lagrange, Chebyshev) once those modules are merged
