@@ -10,6 +10,7 @@ class TensorProductBasis(PolynomialBasis):
         super().__init__(self.nx * self.ny)
 
     def _unflatten_index(self, index: int):
+        """Helper function to loop through vectors"""
         return divmod(index, self.ny)
 
     def evaluate_basis(self, index: int, x: np.ndarray, y: np.ndarray) -> np.ndarray:
