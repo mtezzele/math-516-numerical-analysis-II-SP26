@@ -7,7 +7,9 @@ class TensorProductBasis(PolynomialBasis):
         self.by = by
         self.nx = bx.n_dofs
         self.ny = by.n_dofs
-        super().__init__(self.nx * self.ny)
+        total_dofs = self.nx * self.ny
+
+        super().__init__(total_dofs - 1, bx.a, by.a)
 
     def _unflatten_index(self, index: int):
         """Helper function to loop through vectors"""
