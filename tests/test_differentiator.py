@@ -2,6 +2,7 @@ import numpy as np
 from numanalysislib.basis.power import PowerBasis
 from numanalysislib.basis.affine import AffinePolynomialBasis
 from numanalysislib.calculus.differentiator import differentiate, evaluate_derivative
+from numanalysislib.basis.chebyshev import ChebyshevBasis
 
 
 class TestDifferentiate:
@@ -103,4 +104,30 @@ class TestDifferentiate:
         result = evaluate_derivative(basis, coeffs, x, scheme="backward")
         np.testing.assert_allclose(result, expected, atol=1e-3)
 
-    # Rishi Note: Test with non-PowerBasis (e.g. Lagrange, Chebyshev) once those modules are merged
+    def test_chebyshev_derivative(self):
+        """Test differentiation of a Chebyshev polynomial."""
+        # Represent f(x) = x^2 as a Chebyshev polynomial, derivative is 2x
+        cheb_basis = ChebyshevBasis(2)
+        x_nodes = cheb_basis.chebyshev_nodes(3, kind="roots")
+        y_nodes = x_nodes**2
+        coeffs = cheb_basis.fit(x_nodes, y_nodes)
+        new_basis, new_coeffs = differentiate(cheb_basis, coeffs)
+        x_test = np.array([-1.0, -0.5, 0.0, 0.5, 1.0])
+        expected = 2.0 * x_test
+        result = new_basis.evaluate(new_coeffs, x_test)
+        np.testing.assert_allclose(result, expected, atol=1e-10)
+
+    def test_affine_chebyshev_derivative(self):
+        """Test differentiation of a Chebyshev polynomial on [0, 10]."""
+        cheb = ChebyshevBasis(2)
+        basis = AffinePolynomialBasis(cheb, a=0.0, b=10.0)
+        x_nodes = np.array([0.0, 5.0, 10.0])
+        y_nodes = x_nodes**2
+        coeffs = basis.fit(x_nodes, y_nodes)
+        new_basis, new_coeffs = differentiate(basis, coeffs)
+        x_test = np.array([0.0, 2.5, 5.0, 7.5, 10.0])
+        expected = 2.0 * x_test
+        result = new_basis.evaluate(new_coeffs, x_test)
+        np.testing.assert_allclose(result, expected, atol=1e-10)
+
+    # Rishi Note: Test with non-PowerBasis (e.g. Lagrange, Newton) once those modules are merged

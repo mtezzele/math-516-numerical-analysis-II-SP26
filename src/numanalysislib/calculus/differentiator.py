@@ -3,8 +3,10 @@ Goal: Differentiation module for polynomial bases objects. Provides analytical a
 for any PolynomialBasis object.
 
 Methods: 
-- `differentiate(basis, coefficients)`: Returns the PowerBasis Representation and coefficients of the derivative polynomial.
-- `evaluate_derivative(basis, coefficients, x)`: Evaluates the derivative at point using central difference method.
+- `differentiate(basis, coefficients)`: Returns the PowerBasis Representation and coefficients of the k-th
+  derivative polynomial.
+- `evaluate_derivative(basis, coefficients, x)`: Evaluates the k-th derivative numerically using the
+  Taylor table / undetermined coefficients approach. Supports centered, forward, and backward schemes.
 
 Note: For non-PowerBasis objects, we first fit the function to a PowerBasis representation before differentiating. 
 """
@@ -13,6 +15,7 @@ import math
 from numanalysislib.basis._abstract import PolynomialBasis
 from numanalysislib.basis.power import PowerBasis
 from numanalysislib.basis.affine import AffinePolynomialBasis
+from numanalysislib.basis.chebyshev import ChebyshevBasis
 from typing import Tuple
 
 def differentiate(basis: PolynomialBasis, coefficients: np.ndarray, k: int = 1) -> Tuple[PolynomialBasis, np.ndarray]:
@@ -37,14 +40,21 @@ def differentiate(basis: PolynomialBasis, coefficients: np.ndarray, k: int = 1) 
     Tuple[PowerBasis, np.ndarray]
         A new PowerBasis of degree n-1 and its coefficients representing the derivative polynomial.
     """
+    if k > basis.degree:
+        return PowerBasis(0), np.array([0.0])
+
     for _ in range(k):
         if isinstance(basis, PowerBasis):
             basis, coefficients = basis.differentiate_coefficients(coefficients)
         else:
-            # For non-PowerBasis, fit to PowerBasis first, then differentiate
+            # For non-PowerBasis, sample Chebyshev nodes for stability, fit to PowerBasis first, then differentiate
             n = basis.degree
-            x_pts = np.linspace(basis.a, basis.b, n + 1)
+            cheb = ChebyshevBasis(n)
+            cheb_nodes = cheb.chebyshev_nodes(n + 1, kind="roots")
+            affine = AffinePolynomialBasis(cheb, a=basis.a, b=basis.b)
+            x_pts = affine.push_forward(cheb_nodes)
             y_pts = basis.evaluate(coefficients, x_pts)
+
             temp_basis = PowerBasis(n)
             temp_coeffs = temp_basis.fit(x_pts, y_pts)
 
@@ -80,6 +90,9 @@ def evaluate_derivative(basis: PolynomialBasis, coefficients: np.ndarray, x: flo
     np.ndarray
         The numerical approximation of the k-th derivative at point x as np.ndarray.
     """
+    if k > basis.degree:
+        return np.zeros_like(np.asarray(x, dtype=float))
+
     x = np.asarray(x, dtype=float)
 
     if scheme == "centered":
