@@ -95,14 +95,16 @@ def evaluate_derivative(basis: PolynomialBasis, coefficients: np.ndarray, x: flo
 
     x = np.asarray(x, dtype=float)
 
-    if scheme == "centered":
-        s = np.arange(-k, k + 1)
-    elif scheme == "forward":
-        s = np.arange(0, k + 1)
-    elif scheme == "backward":
-        s = np.arange(-k, 1)
-    else:
-        raise ValueError(f"Unknown scheme: {scheme}. Use 'centered', 'forward', or 'backward'.")
+    match scheme:
+        case "centered":
+            s = np.arange(-k, k + 1)
+        case "forward":
+            s = np.arange(0, k + 1)
+        case "backward":
+            s = np.arange(-k, 1)
+        case _:
+            raise ValueError(f"Unknown scheme: {scheme}. " f"Use 'centered', 'forward', or 'backward'.")
+        
     n = len(s)
 
     # Build Taylor table: A[i, j] = s_i^j / j!
